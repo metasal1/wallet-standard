@@ -2,8 +2,8 @@
     "private": true,
     "name": "spl-cards-standard-wallet",
     "version": "0.1.0",
-    "author": "Solana Maintainers <maintainers@solana.foundation>",
-    "repository": "https://github.com/solana-labs/wallet-standard",
+    "author": "SPL Cards <dev@spl.cards>",
+    "repository": "https://github.com/Nelis-sol/spl-card-wallet-adapter",
     "license": "Apache-2.0",
     "engines": {
         "node": ">=16"
