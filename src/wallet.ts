@@ -32,28 +32,28 @@ import {
     type StandardEventsOnMethod,
 } from '@wallet-standard/features';
 import bs58 from 'bs58';
-import { GhostWalletAccount } from './account.js';
+import { SplCardsWalletAccount } from './account.js';
 import { icon } from './icon.js';
 import type { SolanaChain } from './solana.js';
 import { isSolanaChain, isVersionedTransaction, SOLANA_CHAINS } from './solana.js';
 import { bytesEqual } from './util.js';
-import type { Ghost } from './window.js';
+import type { SplCards } from './window.js';
 
-export const GhostNamespace = 'ghost:';
+export const SplCardsNamespace = 'splCards:';
 
-export type GhostFeature = {
-    [GhostNamespace]: {
-        ghost: Ghost;
+export type SplCardsFeature = {
+    [SplCardsNamespace]: {
+        splCards: SplCards;
     };
 };
 
-export class GhostWallet implements Wallet {
+export class SplCardsWallet implements Wallet {
     readonly #listeners: { [E in StandardEventsNames]?: StandardEventsListeners[E][] } = {};
     readonly #version = '1.0.0' as const;
-    readonly #name = 'Ghost' as const;
+    readonly #name = 'SPL Cards' as const;
     readonly #icon = icon;
-    #account: GhostWalletAccount | null = null;
-    readonly #ghost: Ghost;
+    #account: SplCardsWalletAccount | null = null;
+    readonly #splCards: SplCards;
 
     get version() {
         return this.#version;
@@ -78,7 +78,7 @@ export class GhostWallet implements Wallet {
         SolanaSignTransactionFeature &
         SolanaSignMessageFeature &
         SolanaSignInFeature &
-        GhostFeature {
+        SplCardsFeature {
         return {
             [StandardConnect]: {
                 version: '1.0.0',
@@ -110,8 +110,8 @@ export class GhostWallet implements Wallet {
                 version: '1.0.0',
                 signIn: this.#signIn,
             },
-            [GhostNamespace]: {
-                ghost: this.#ghost,
+            [SplCardsNamespace]: {
+                splCards: this.#splCards,
             },
         };
     }
@@ -120,16 +120,16 @@ export class GhostWallet implements Wallet {
         return this.#account ? [this.#account] : [];
     }
 
-    constructor(ghost: Ghost) {
-        if (new.target === GhostWallet) {
+    constructor(splCards: SplCards) {
+        if (new.target === SplCardsWallet) {
             Object.freeze(this);
         }
 
-        this.#ghost = ghost;
+        this.#splCards = splCards;
 
-        ghost.on('connect', this.#connected, this);
-        ghost.on('disconnect', this.#disconnected, this);
-        ghost.on('accountChanged', this.#reconnected, this);
+        splCards.on('connect', this.#connected, this);
+        splCards.on('disconnect', this.#disconnected, this);
+        splCards.on('accountChanged', this.#reconnected, this);
 
         this.#connected();
     }
@@ -149,14 +149,14 @@ export class GhostWallet implements Wallet {
     }
 
     #connected = () => {
-        const address = this.#ghost.publicKey?.toBase58();
+        const address = this.#splCards.publicKey?.toBase58();
         if (address) {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            const publicKey = this.#ghost.publicKey!.toBytes();
+            const publicKey = this.#splCards.publicKey!.toBytes();
 
             const account = this.#account;
             if (!account || account.address !== address || !bytesEqual(account.publicKey, publicKey)) {
-                this.#account = new GhostWalletAccount({ address, publicKey });
+                this.#account = new SplCardsWalletAccount({ address, publicKey });
                 this.#emit('change', { accounts: this.accounts });
             }
         }
@@ -170,7 +170,7 @@ export class GhostWallet implements Wallet {
     };
 
     #reconnected = () => {
-        if (this.#ghost.publicKey) {
+        if (this.#splCards.publicKey) {
             this.#connected();
         } else {
             this.#disconnected();
@@ -179,7 +179,7 @@ export class GhostWallet implements Wallet {
 
     #connect: StandardConnectMethod = async ({ silent } = {}) => {
         if (!this.#account) {
-            await this.#ghost.connect(silent ? { onlyIfTrusted: true } : undefined);
+            await this.#splCards.connect(silent ? { onlyIfTrusted: true } : undefined);
         }
 
         this.#connected();
@@ -188,7 +188,7 @@ export class GhostWallet implements Wallet {
     };
 
     #disconnect: StandardDisconnectMethod = async () => {
-        await this.#ghost.disconnect();
+        await this.#splCards.disconnect();
     };
 
     #signAndSendTransaction: SolanaSignAndSendTransactionMethod = async (...inputs) => {
@@ -203,7 +203,7 @@ export class GhostWallet implements Wallet {
             if (account !== this.#account) throw new Error('invalid account');
             if (!isSolanaChain(chain)) throw new Error('invalid chain');
 
-            const { signature } = await this.#ghost.signAndSendTransaction(
+            const { signature } = await this.#splCards.signAndSendTransaction(
                 VersionedTransaction.deserialize(transaction),
                 {
                     preflightCommitment,
@@ -234,7 +234,7 @@ export class GhostWallet implements Wallet {
             if (account !== this.#account) throw new Error('invalid account');
             if (chain && !isSolanaChain(chain)) throw new Error('invalid chain');
 
-            const signedTransaction = await this.#ghost.signTransaction(VersionedTransaction.deserialize(transaction));
+            const signedTransaction = await this.#splCards.signTransaction(VersionedTransaction.deserialize(transaction));
 
             const serializedTransaction = isVersionedTransaction(signedTransaction)
                 ? signedTransaction.serialize()
@@ -262,7 +262,7 @@ export class GhostWallet implements Wallet {
 
             const transactions = inputs.map(({ transaction }) => VersionedTransaction.deserialize(transaction));
 
-            const signedTransactions = await this.#ghost.signAllTransactions(transactions);
+            const signedTransactions = await this.#splCards.signAllTransactions(transactions);
 
             outputs.push(
                 ...signedTransactions.map((signedTransaction) => {
@@ -293,7 +293,7 @@ export class GhostWallet implements Wallet {
             const { message, account } = inputs[0]!;
             if (account !== this.#account) throw new Error('invalid account');
 
-            const { signature } = await this.#ghost.signMessage(message);
+            const { signature } = await this.#splCards.signMessage(message);
 
             outputs.push({ signedMessage: message, signature });
         } else if (inputs.length > 1) {
@@ -310,10 +310,10 @@ export class GhostWallet implements Wallet {
 
         if (inputs.length > 1) {
             for (const input of inputs) {
-                outputs.push(await this.#ghost.signIn(input));
+                outputs.push(await this.#splCards.signIn(input));
             }
         } else {
-            return [await this.#ghost.signIn(inputs[0])];
+            return [await this.#splCards.signIn(inputs[0])];
         }
 
         return outputs;

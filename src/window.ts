@@ -1,18 +1,18 @@
 import { type SolanaSignInInput, type SolanaSignInOutput } from '@solana/wallet-standard-features';
 import type { PublicKey, SendOptions, Transaction, TransactionSignature, VersionedTransaction } from '@solana/web3.js';
 
-export interface GhostEvent {
+export interface SplCardsEvent {
     connect(...args: unknown[]): unknown;
     disconnect(...args: unknown[]): unknown;
     accountChanged(...args: unknown[]): unknown;
 }
 
-export interface GhostEventEmitter {
-    on<E extends keyof GhostEvent>(event: E, listener: GhostEvent[E], context?: any): void;
-    off<E extends keyof GhostEvent>(event: E, listener: GhostEvent[E], context?: any): void;
+export interface SplCardsEventEmitter {
+    on<E extends keyof SplCardsEvent>(event: E, listener: SplCardsEvent[E], context?: any): void;
+    off<E extends keyof SplCardsEvent>(event: E, listener: SplCardsEvent[E], context?: any): void;
 }
 
-export interface Ghost extends GhostEventEmitter {
+export interface SplCards extends SplCardsEventEmitter {
     publicKey: PublicKey | null;
     connect(options?: { onlyIfTrusted?: boolean }): Promise<{ publicKey: PublicKey }>;
     disconnect(): Promise<void>;
